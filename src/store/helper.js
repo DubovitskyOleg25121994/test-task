@@ -13,6 +13,8 @@ export async function methodUpdate (
   type
 ) {
   try {
+    console.log('currentCTag', currentCTag)
+    console.log('newCTag', newCTag)
     if (currentCTag !== newCTag) {
       // await Promise.all([
       // find contact that we delete on api
@@ -244,6 +246,8 @@ async function findNewHash (context, currentHash, newContactsInfo, newCTag) {
       currentHash.Info.every(async k => k.UUID !== e.UUID)
     )
 
+    console.log('findNewHash', arrOut)
+
     if (arrOut.length > 0) {
       const newDataPersonal = []
       arrOut.forEach(async item => newDataPersonal.push(`"${item.UUID}"`))
@@ -269,6 +273,8 @@ export async function findDir (context, currentHash, newContactsInfo) {
     const arrOut = currentHash.Info.filter(async e =>
       newContactsInfo.Info.every(async k => k.UUID !== e.UUID)
     )
+
+    console.log('arrOut', arrOut)
     return arrOut
   } catch (err) {
     console.log('err', err)

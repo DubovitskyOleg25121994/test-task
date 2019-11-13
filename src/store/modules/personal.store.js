@@ -45,8 +45,11 @@ const mutations = {
     )
 
     if (findIndexContact !== -1) {
-      state.listDetailInfoContactsPersonal.info[findIndexContact] =
+      if (newData[index]) {
+        state.listDetailInfoContactsPersonal.info[findIndexContact] =
         newData[index]
+        console.log('newData[index]', newData[index])
+      }
     }
   },
 

@@ -55,6 +55,9 @@ export const store = new Vuex.Store({
     },
     ADD_NEW_HASH: (state, data) => {
       const { getNewDataPersonal, newCTag } = data
+      console.log('ADD_NEW_HASH')
+      console.log('newCTag', newCTag)
+      console.log('getNewDataPersonal', getNewDataPersonal)
       getNewDataPersonal.forEach(element => {
         state.personalStore.listDetailInfoContactsPersonal.info.push(element)
       })
@@ -64,13 +67,20 @@ export const store = new Vuex.Store({
       const { findedContactForDelete, newCTag } = data
       findedContactForDelete.forEach(element => {
         const findIndexContact = state.personalStore.listDetailInfoContactsPersonal.info.findIndex(
-          item => element.UUID === item.UUID
+          item => {
+            console.log('element.UUID', element.UUID)
+            console.log('item.UUID', item.UUID)
+            return element.UUID === item.UUID
+          }
         )
-        state.personalStore.listDetailInfoContactsPersonal.info.splice(
-          findIndexContact,
-          1
-        )
-        state.personalStore.contactsInfoHashPersonal.CTag = newCTag
+        console.log('DELETE_CONTACT', findIndexContact)
+        if (findIndexContact !== -1) {
+          state.personalStore.listDetailInfoContactsPersonal.info.splice(
+            findIndexContact,
+            1
+          )
+          state.personalStore.contactsInfoHashPersonal.CTag = newCTag
+        }
       })
     }
   },
@@ -165,7 +175,7 @@ export const store = new Vuex.Store({
       try {
         const { newDataPersonal, newCTag } = array
         const getNewDataPersonal = await addNewHasForPersonal(newDataPersonal)
-        context.commit('ADD_NEW_HASH', {
+        await context.commit('ADD_NEW_HASH', {
           getNewDataPersonal: getNewDataPersonal.data.Result,
           newCTag
         })
