@@ -12,8 +12,8 @@
             v-on:click="onSelectContact(index)"
             :class="{ active : active_el == index }"
           >
-            <div>{{contactInfo.FullName}}</div>
-            <div>{{contactInfo.ViewEmail}}</div>
+            <div v-if="contactInfo && contactInfo.FullName">{{contactInfo.FullName}}</div>
+            <div v-if="contactInfo && contactInfo.FullName">{{contactInfo.ViewEmail}}</div>
           </div>
         </div>
       </div>
