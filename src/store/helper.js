@@ -16,11 +16,11 @@ export async function methodUpdate (
     if (currentCTag !== newCTag) {
       await Promise.all([
         // find contact that we delete on api
-      // then delete it in the store
+        // then delete it in the store
         deleteContacts(context, currentHash, newContactsInfo, newCTag),
         // add new hash
-        addNewContacts(context, currentHash, newContactsInfo, newCTag),
         // find differences, update ETag then update contacts
+        addNewContacts(context, currentHash, newContactsInfo, newCTag),
         updateContacts(type, newContactsInfo, currentHash, context)
       ])
     }
@@ -33,25 +33,37 @@ export async function methodUpdate (
   }
 }
 
-function deleteContacts (context, currentHash, newContactsInfo, newCTag) {
-  const findedContactForDelete = findDir(context, currentHash, newContactsInfo)
+async function deleteContacts (context, currentHash, newContactsInfo, newCTag) {
+  const findedContactForDelete = await findDir(
+    context,
+    currentHash,
+    newContactsInfo
+  )
   if (findedContactForDelete.length > 0) {
-    context.dispatch('DELETE_CONTACT', { findedContactForDelete, newCTag })
+    await context.dispatch('DELETE_CONTACT', {
+      findedContactForDelete,
+      newCTag
+    })
   }
+  return true
 }
 
-function addNewContacts (context, currentHash, newContactsInfo, newCTag) {
-  findNewHash(context, currentHash, newContactsInfo, newCTag)
+async function addNewContacts (context, currentHash, newContactsInfo, newCTag) {
+  try {
+    await findNewHash(context, currentHash, newContactsInfo, newCTag)
+  } catch (err) {
+    console.log('err', err)
+  }
 }
 
 function updateContacts (type, newContactsInfo, currentHash, context) {
-  const updatedValueCurrentHash =
-    context.getters.GET_CONTACTS_INFO_HASH_PERSONAL
+  // const updatedValueCurrentHash =
+  //   context.getters.GET_CONTACTS_INFO_HASH_PERSONAL
 
-  if (newContactsInfo.Info.length === updatedValueCurrentHash.Info.length) {
-    const findedDif = findDifferenceInHases(currentHash, newContactsInfo, type)
-    context.dispatch('UPDATE_HASH', findedDif)
-  }
+  // if (newContactsInfo.Info.length === updatedValueCurrentHash.Info.length) {
+  const findedDif = findDifferenceInHases(currentHash, newContactsInfo, type)
+  context.dispatch('UPDATE_HASH', findedDif)
+  // }
 }
 
 export function selectedStoragedData (storage, state) {
@@ -107,16 +119,20 @@ export function getNewDataContactsInfo (nameStorage, apiUrl, Uids) {
 function findDifferenceInHases (currentHash, newContactsInfo, type) {
   const difference = []
   currentHash.Info.forEach((a, i) => {
-    Object.keys(a).forEach(k => {
-      if (a[k] !== newContactsInfo.Info[i][k]) {
-        difference.push({
-          index: i,
-          UUID: newContactsInfo.Info[i]['UUID'],
-          ETag: newContactsInfo.Info[i][k],
-          type
-        })
-      }
-    })
+    if (a) {
+      Object.keys(a).forEach(k => {
+        if (a[k] !== newContactsInfo.Info[i][k]) {
+          if (k) {
+            difference.push({
+              index: i,
+              UUID: newContactsInfo.Info[i]['UUID'],
+              ETag: newContactsInfo.Info[i][k],
+              type
+            })
+          }
+        }
+      })
+    }
   })
   return difference
 }
@@ -137,10 +153,10 @@ export async function updatePersonalData (
         arrayUids
       )
 
-      data.forEach((item, i) => {
+      data.forEach(async (item, i) => {
         const { index, ETag, UUID } = item
-        context.commit('UPDATE_HASH_PERSONAL', { index, ETag })
-        context.commit('UPDATE_CONTACT_INFO', {
+        await context.commit('UPDATE_HASH_PERSONAL', { index, ETag })
+        await context.commit('UPDATE_CONTACT_INFO', {
           UUID,
           newData: getNewDatafromApi.data.Result,
           index: i
@@ -151,9 +167,9 @@ export async function updatePersonalData (
           CTag: context.state.listDetailInfoContactsPersonal.CTag
         }
 
-        context.commit('ADD_DETAIL_INFO_CONTACT_PESONAL', data)
+        await context.commit('ADD_DETAIL_INFO_CONTACT_PESONAL', data)
         if (updateSelectedStorage && updateSelectedStorage.Id === 'personal') {
-          context.commit('ADD_SELECTED_CONTACTS', updateSelectedStorage)
+          await context.commit('ADD_SELECTED_CONTACTS', updateSelectedStorage)
         }
       })
     }
@@ -213,6 +229,7 @@ function findNewHash (context, currentHash, newContactsInfo, newCTag) {
     arrOut.forEach(item => newDataPersonal.push(`"${item.UUID}"`))
     context.dispatch('ADD_NEW_HASH', { newDataPersonal, newCTag })
   }
+  return true
 }
 
 export async function addNewHasForPersonal (newDataPersonal) {
@@ -228,13 +245,8 @@ export function findDir (context, currentHash, newContactsInfo) {
   const arrOut = currentHash.Info.filter(e =>
     newContactsInfo.Info.every(k => k.UUID !== e.UUID)
   )
+
   return arrOut
 }
 
-// export async function deleTeHasForPersonal (newDataPersonal) {
-//   try {
-//     return getNewDataContactsInfo('personal', apiUrl, newDataPersonal)
-//   } catch (err) {
-//     console.log('err', err)
-//   }
-// }
+
