@@ -17,19 +17,12 @@ export async function methodUpdate (
       await Promise.all([
         // find contact that we delete on api
       // then delete it in the store
-        // add new hash
         deleteContacts(context, currentHash, newContactsInfo, newCTag),
+        // add new hash
         addNewContacts(context, currentHash, newContactsInfo, newCTag),
         // find differences, update ETag then update contacts
         updateContacts(type, newContactsInfo, currentHash, context)
       ])
-      // if (newContactsInfo.Info.length > currentHash.Info.length) {
-
-      // }
-
-      // if (newContactsInfo.Info.length === currentHash.Info.length) {
-
-      // }
     }
     if (currentCTag === newCTag) {
       // do nothing
@@ -42,8 +35,6 @@ export async function methodUpdate (
 
 function deleteContacts (context, currentHash, newContactsInfo, newCTag) {
   const findedContactForDelete = findDir(context, currentHash, newContactsInfo)
-
-  console.log('findedContactForDelete.length', findedContactForDelete.length)
   if (findedContactForDelete.length > 0) {
     context.dispatch('DELETE_CONTACT', { findedContactForDelete, newCTag })
   }
@@ -54,16 +45,11 @@ function addNewContacts (context, currentHash, newContactsInfo, newCTag) {
 }
 
 function updateContacts (type, newContactsInfo, currentHash, context) {
-  console.log('newContactsInfo.Info.length', newContactsInfo.Info.length)
-  console.log('currentHash.Info.length', currentHash.Info.length)
-
   const updatedValueCurrentHash =
     context.getters.GET_CONTACTS_INFO_HASH_PERSONAL
-  console.log('updatedValueCurrentHash', updatedValueCurrentHash.Info.length)
 
   if (newContactsInfo.Info.length === updatedValueCurrentHash.Info.length) {
     const findedDif = findDifferenceInHases(currentHash, newContactsInfo, type)
-    console.log('findedDif', findedDif)
     context.dispatch('UPDATE_HASH', findedDif)
   }
 }
@@ -119,8 +105,6 @@ export function getNewDataContactsInfo (nameStorage, apiUrl, Uids) {
 }
 
 function findDifferenceInHases (currentHash, newContactsInfo, type) {
-  console.log('currentHash', currentHash.Info.length)
-  console.log('newContactsInfo', newContactsInfo.Info.length)
   const difference = []
   currentHash.Info.forEach((a, i) => {
     Object.keys(a).forEach(k => {
@@ -134,7 +118,6 @@ function findDifferenceInHases (currentHash, newContactsInfo, type) {
       }
     })
   })
-  console.log('difference', difference)
   return difference
 }
 
@@ -152,11 +135,6 @@ export async function updatePersonalData (
         type,
         apiUrl,
         arrayUids
-      )
-
-      console.log(
-        'getNewDatafromApi [updatePersonalData]',
-        getNewDatafromApi.data
       )
 
       data.forEach((item, i) => {
@@ -230,7 +208,6 @@ function findNewHash (context, currentHash, newContactsInfo, newCTag) {
     currentHash.Info.every(k => k.UUID !== e.UUID)
   )
 
-  console.log('findNewHash', arrOut.length)
   if (arrOut.length > 0) {
     const newDataPersonal = []
     arrOut.forEach(item => newDataPersonal.push(`"${item.UUID}"`))
