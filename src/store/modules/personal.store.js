@@ -37,7 +37,11 @@ const mutations = {
     const { UUID, newData, index } = data
 
     const findIndexContact = state.listDetailInfoContactsPersonal.info.findIndex(
-      item => item.UUID === UUID
+      item => {
+        if (item && item.UUID) {
+          return item.UUID === UUID
+        }
+      }
     )
 
     if (findIndexContact !== -1) {
