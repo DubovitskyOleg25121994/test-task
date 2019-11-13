@@ -17,11 +17,11 @@ export async function methodUpdate (
       await Promise.all([
         // find contact that we delete on api
         // then delete it in the store
-        deleteContacts(context, currentHash, newContactsInfo, newCTag),
+        await deleteContacts(context, currentHash, newContactsInfo, newCTag),
         // add new hash
         // find differences, update ETag then update contacts
-        addNewContacts(context, currentHash, newContactsInfo, newCTag),
-        updateContacts(type, newContactsInfo, currentHash, context)
+        await addNewContacts(context, currentHash, newContactsInfo, newCTag),
+        await updateContacts(type, newContactsInfo, currentHash, context)
       ])
     }
     if (currentCTag === newCTag) {
@@ -34,23 +34,27 @@ export async function methodUpdate (
 }
 
 async function deleteContacts (context, currentHash, newContactsInfo, newCTag) {
-  const findedContactForDelete = await findDir(
-    context,
-    currentHash,
-    newContactsInfo
-  )
-  if (findedContactForDelete.length > 0) {
-    await context.dispatch('DELETE_CONTACT', {
-      findedContactForDelete,
-      newCTag
-    })
+  try {
+    const findedContactForDelete = await findDir(
+      context,
+      currentHash,
+      newContactsInfo
+    )
+    if (findedContactForDelete.length > 0) {
+      await context.dispatch('DELETE_CONTACT', {
+        findedContactForDelete,
+        newCTag
+      })
+    }
+    return true
+  } catch (err) {
+    console.log('err', err)
   }
-  return true
 }
 
 async function addNewContacts (context, currentHash, newContactsInfo, newCTag) {
   try {
-    await findNewHash(context, currentHash, newContactsInfo, newCTag)
+    return findNewHash(context, currentHash, newContactsInfo, newCTag)
   } catch (err) {
     console.log('err', err)
   }
@@ -63,6 +67,7 @@ function updateContacts (type, newContactsInfo, currentHash, context) {
   // if (newContactsInfo.Info.length === updatedValueCurrentHash.Info.length) {
   const findedDif = findDifferenceInHases(currentHash, newContactsInfo, type)
   context.dispatch('UPDATE_HASH', findedDif)
+  return true
   // }
 }
 
@@ -81,60 +86,74 @@ export function selectedStoragedData (storage, state) {
   }
 }
 
-export function getNewDataContacts (nameStorage, apiUrl) {
-  const formData = new FormData()
-  formData.append('Module', 'Contacts')
-  formData.append('Method', 'GetContactsInfo')
-  formData.append('Parameters', `{"Storage":"${nameStorage}"}`)
+export function getNewDataContacts (nameStoasrage, apiUrl) {
+  try {
+    const formData = new FormData()
+    formData.append('Module', 'Contacts')
+    formData.append('Method', 'GetContactsInfo')
+    formData.append('Parameters', `{"Storage":"${nameStoasrage}"}`)
 
-  return axios({
-    method: 'post',
-    url: apiUrl,
-    data: formData,
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`
-    }
-  })
+    return axios({
+      method: 'post',
+      url: apiUrl,
+      data: formData,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+  } catch (err) {
+    console.log('err', err)
+  }
 }
 
-export function getNewDataContactsInfo (nameStorage, apiUrl, Uids) {
-  const formData = new FormData()
-  formData.append('Module', 'Contacts')
-  formData.append('Method', 'GetContactsByUids')
-  formData.append(
-    'Parameters',
-    `{"Storage":"${nameStorage}", "Uids":[${Uids}]}`
-  )
+export async function getNewDataContactsInfo (nameStorage, apiUrl, Uids) {
+  try {
+    const formData = new FormData()
+    formData.append('Module', 'Contacts')
+    formData.append('Method', 'GetContactsByUids')
+    formData.append(
+      'Parameters',
+      `{"Storage":"${nameStorage}", "Uids":[${Uids}]}`
+    )
 
-  return axios({
-    method: 'post',
-    url: apiUrl,
-    data: formData,
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`
-    }
-  })
+    return axios({
+      method: 'post',
+      url: apiUrl,
+      data: formData,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+  } catch (err) {
+    console.log('err', err)
+  }
 }
 
 function findDifferenceInHases (currentHash, newContactsInfo, type) {
-  const difference = []
-  currentHash.Info.forEach((a, i) => {
-    if (a) {
-      Object.keys(a).forEach(k => {
-        if (a[k] !== newContactsInfo.Info[i][k]) {
-          if (k) {
-            difference.push({
-              index: i,
-              UUID: newContactsInfo.Info[i]['UUID'],
-              ETag: newContactsInfo.Info[i][k],
-              type
-            })
+  try {
+    const difference = []
+    currentHash.Info.forEach(async (a, i) => {
+      if (a) {
+        Object.keys(a).forEach(async k => {
+          if (a[k] !== newContactsInfo.Info[i][k]) {
+            if (k) {
+              if (newContactsInfo.Info[i] && newContactsInfo.Info[i]['UUID']) {
+                difference.push({
+                  index: i,
+                  UUID: newContactsInfo.Info[i]['UUID'],
+                  ETag: newContactsInfo.Info[i][k],
+                  type
+                })
+              }
+            }
           }
-        }
-      })
-    }
-  })
-  return difference
+        })
+      }
+    })
+    return difference
+  } catch (err) {
+    console.log('err', err)
+  }
 }
 
 export async function updatePersonalData (
@@ -208,9 +227,9 @@ export async function updateTeamData (
           CTag: context.getters.GET_DETAIL_INFO_CONTACT_TEAM.CTag
         }
 
-        context.commit('ADD_DETAIL_INFO_CONTACT_TEAM', data)
+        await context.commit('ADD_DETAIL_INFO_CONTACT_TEAM', data)
         if (updateSelectedStorage && updateSelectedStorage.Id === 'team') {
-          context.commit('ADD_SELECTED_CONTACTS', updateSelectedStorage)
+          await context.commit('ADD_SELECTED_CONTACTS', updateSelectedStorage)
         }
       })
     }
@@ -219,17 +238,21 @@ export async function updateTeamData (
   }
 }
 
-function findNewHash (context, currentHash, newContactsInfo, newCTag) {
-  const arrOut = newContactsInfo.Info.filter(e =>
-    currentHash.Info.every(k => k.UUID !== e.UUID)
-  )
+async function findNewHash (context, currentHash, newContactsInfo, newCTag) {
+  try {
+    const arrOut = newContactsInfo.Info.filter(async e =>
+      currentHash.Info.every(async k => k.UUID !== e.UUID)
+    )
 
-  if (arrOut.length > 0) {
-    const newDataPersonal = []
-    arrOut.forEach(item => newDataPersonal.push(`"${item.UUID}"`))
-    context.dispatch('ADD_NEW_HASH', { newDataPersonal, newCTag })
+    if (arrOut.length > 0) {
+      const newDataPersonal = []
+      arrOut.forEach(async item => newDataPersonal.push(`"${item.UUID}"`))
+      await context.dispatch('ADD_NEW_HASH', { newDataPersonal, newCTag })
+    }
+    return true
+  } catch (err) {
+    console.log('err', err)
   }
-  return true
 }
 
 export async function addNewHasForPersonal (newDataPersonal) {
@@ -241,12 +264,13 @@ export async function addNewHasForPersonal (newDataPersonal) {
 }
 
 // function find contact that we don't have in new array from api
-export function findDir (context, currentHash, newContactsInfo) {
-  const arrOut = currentHash.Info.filter(e =>
-    newContactsInfo.Info.every(k => k.UUID !== e.UUID)
-  )
-
-  return arrOut
+export async function findDir (context, currentHash, newContactsInfo) {
+  try {
+    const arrOut = currentHash.Info.filter(async e =>
+      newContactsInfo.Info.every(async k => k.UUID !== e.UUID)
+    )
+    return arrOut
+  } catch (err) {
+    console.log('err', err)
+  }
 }
-
-
