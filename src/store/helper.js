@@ -14,15 +14,15 @@ export async function methodUpdate (
 ) {
   try {
     if (currentCTag !== newCTag) {
-      await Promise.all([
-        // find contact that we delete on api
-        // then delete it in the store
-        await deleteContacts(context, currentHash, newContactsInfo, newCTag),
-        // add new hash
-        // find differences, update ETag then update contacts
-        await addNewContacts(context, currentHash, newContactsInfo, newCTag),
-        await updateContacts(type, newContactsInfo, currentHash, context)
-      ])
+      // await Promise.all([
+      // find contact that we delete on api
+      // then delete it in the store
+      deleteContacts(context, currentHash, newContactsInfo, newCTag)
+      // add new hash
+      // find differences, update ETag then update contacts
+      addNewContacts(context, currentHash, newContactsInfo, newCTag)
+      updateContacts(type, newContactsInfo, currentHash, context)
+      // ])
     }
     if (currentCTag === newCTag) {
       // do nothing
